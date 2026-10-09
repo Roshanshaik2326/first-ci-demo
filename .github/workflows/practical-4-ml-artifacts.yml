@@ -1,0 +1,47 @@
+
+name: Practical 4 - ML Artifacts
+
+on:
+  push:
+    paths:
+      - "Practical-4-ML-Artifacts/**"
+      - "Practical-2-ML-CI/**"
+      - ".github/workflows/practical-4-ml-artifacts.yml"
+  pull_request:
+    paths:
+      - "Practical-4-ML-Artifacts/**"
+      - "Practical-2-ML-CI/**"
+      - ".github/workflows/practical-4-ml-artifacts.yml"
+  workflow_dispatch:
+
+jobs:
+  train-and-upload:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r Practical-2-ML-CI/requirements.txt
+
+      - name: Train model and generate metrics
+        working-directory: Practical-2-ML-CI
+        run: python train_model.py
+
+      - name: Upload model and metrics artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: student-result-model-and-metrics
+          path: |
+            Practical-2-ML-CI/student_result_model.pkl
+            Practical-2-ML-CI/metrics.json
+          if-no-files-found: error
+          retention-days: 7
