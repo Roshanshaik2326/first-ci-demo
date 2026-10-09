@@ -1,0 +1,57 @@
+
+name: Practical 5 - ML Continuous Delivery
+
+on:
+  push:
+    paths:
+      - "Practical-5-ML-Continuous-Delivery/**"
+      - "Practical-2-ML-CI/**"
+      - ".github/workflows/practical-5-ml-cd.yml"
+  pull_request:
+    paths:
+      - "Practical-5-ML-Continuous-Delivery/**"
+      - "Practical-2-ML-CI/**"
+      - ".github/workflows/practical-5-ml-cd.yml"
+  workflow_dispatch:
+
+jobs:
+  build-test-and-deliver:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r Practical-2-ML-CI/requirements.txt
+
+      - name: Train model
+        working-directory: Practical-2-ML-CI
+        run: python train_model.py
+
+      - name: Run prediction application tests
+        working-directory: Practical-5-ML-Continuous-Delivery
+        run: python -m unittest test_predict.py -v
+
+      - name: Prepare delivery package
+        run: |
+          mkdir -p delivery-package
+          cp Practical-5-ML-Continuous-Delivery/predict.py delivery-package/
+          cp Practical-2-ML-CI/student_result_model.pkl delivery-package/
+          cp Practical-2-ML-CI/metrics.json delivery-package/
+          cp Practical-2-ML-CI/requirements.txt delivery-package/
+
+      - name: Upload delivery package
+        uses: actions/upload-artifact@v4
+        with:
+          name: student-result-prediction-app
+          path: delivery-package/
+          if-no-files-found: error
+          retention-days: 7
