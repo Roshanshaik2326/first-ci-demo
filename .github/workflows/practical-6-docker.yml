@@ -1,0 +1,60 @@
+
+name: Practical 6 - Docker ML App
+
+on:
+  push:
+    paths:
+      - "Practical-6-Docker-ML-App/**"
+      - "Practical-5-ML-Continuous-Delivery/**"
+      - "Practical-2-ML-CI/**"
+      - ".dockerignore"
+      - ".github/workflows/practical-6-docker.yml"
+  pull_request:
+    paths:
+      - "Practical-6-Docker-ML-App/**"
+      - "Practical-5-ML-Continuous-Delivery/**"
+      - "Practical-2-ML-CI/**"
+      - ".dockerignore"
+      - ".github/workflows/practical-6-docker.yml"
+  workflow_dispatch:
+
+jobs:
+  docker-build-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r Practical-2-ML-CI/requirements.txt
+
+      - name: Train model
+        working-directory: Practical-2-ML-CI
+        run: python train_model.py
+
+      - name: Test prediction application
+        working-directory: Practical-5-ML-Continuous-Delivery
+        run: python -m unittest test_predict.py -v
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            -f Practical-6-Docker-ML-App/Dockerfile \
+            -t student-result-prediction:latest \
+            .
+
+      - name: Test Docker container prediction
+        run: |
+          docker run --rm student-result-prediction:latest \
+            --attendance 0.9 \
+            --internal-marks 0.8 \
+            --assignment-marks 0.7 \
+            --previous-score 0.85
