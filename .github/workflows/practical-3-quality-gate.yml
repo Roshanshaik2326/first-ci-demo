@@ -1,0 +1,44 @@
+
+name: Practical 3 - ML Quality Gate
+
+on:
+  push:
+    paths:
+      - "Practical-3-ML-Quality-Gate/**"
+      - "Practical-2-ML-CI/**"
+      - ".github/workflows/practical-3-quality-gate.yml"
+  pull_request:
+    paths:
+      - "Practical-3-ML-Quality-Gate/**"
+      - "Practical-2-ML-CI/**"
+      - ".github/workflows/practical-3-quality-gate.yml"
+  workflow_dispatch:
+
+jobs:
+  quality-gate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r Practical-2-ML-CI/requirements.txt
+
+      - name: Generate model metrics
+        working-directory: Practical-2-ML-CI
+        run: python train_model.py
+
+      - name: Run quality gate unit tests
+        working-directory: Practical-3-ML-Quality-Gate
+        run: python -m unittest test_quality_gate.py -v
+
+      - name: Check actual model quality
+        run: python Practical-3-ML-Quality-Gate/quality_gate.py
